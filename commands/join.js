@@ -1,8 +1,8 @@
-const { joinVoiceChannel } = require ('@discordjs/voice')
+const voice = require ('@discordjs/voice')
 
 command = {
-  name: 'play',
-  description: 'doesnt really do anything yet'
+  name: 'join',
+  description: 'Join voice channel'
 }
 
 async function exec(interaction) {
@@ -18,14 +18,15 @@ async function exec(interaction) {
     return;
   }
 
-  joinVoiceChannel({
+  voice.joinVoiceChannel({
     channelId: vc.id,
     guildId: interaction.guild.id,
     adapterCreator: interaction.guild.voiceAdapterCreator,
   })
 
+
   await interaction.reply({
-    content: 'i am join',
+    content: `i am join`,
     ephemeral: true
   });
 }
