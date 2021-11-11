@@ -173,7 +173,26 @@ const music_player = async (guild, song, interaction) => {
   song_queue.player = player;
   const resource = voice.createAudioResource(stream);
   await player.play(resource);
+
+  player.on('error', err => {
+    console.error(err);
+  })
+
+  /*
+  audioPlayer.on(voice.AudioPlayerStatus.Playing, async () => {
+    //perform some action while playing
+  });
+  */
+
   player.on(voice.AudioPlayerStatus.Idle, async () => {
+    const timeout = async (ms) => {
+      setTimeout(ms);
+    }
+    await timeout(2000);
+    if(voice.AudioPlayerStatus.Buffering || voice.AudioPlayerStatus.Playing) {
+      return;
+    }
+
     song_queue.songs.shift();
     await music_player(guild, song_queue.songs[0], interaction);
     
