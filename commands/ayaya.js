@@ -4,8 +4,9 @@ command = {
 }
 
 async function exec(interaction) {
+  const reply = "```css\n[AYAYA]\n" + "```";
   await interaction.reply({
-    content: 'AYAYA',
+    content: reply,
     ephemeral: true
   });
 }

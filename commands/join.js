@@ -24,9 +24,9 @@ async function exec(interaction) {
     adapterCreator: interaction.guild.voiceAdapterCreator,
   })
 
-
+  const reply = "```css\n[i am join]\n" + "```";
   await interaction.reply({
-    content: `i am join`,
+    content: reply,
     ephemeral: true
   });
 }

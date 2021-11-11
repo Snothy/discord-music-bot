@@ -1,27 +1,34 @@
-const ayaya = require('../commands/ayaya');
-const play = require('../commands/play');
-const join = require('../commands/join');
-const leave = require('../commands/leave');
+const fs = require('fs');
 
-commands = [
-  ayaya.command,
-  play.command,
-  join.command,
-  leave.command
-]; 
+let commands = [];
+let execution = {};
 
-const execution = {
-  ayaya: ayaya.exec,
-  play: play.exec,
-  join: join.exec,
-  leave: leave.exec
+function init() {
+  try {
+  var path = require('path');
+  let route = path.resolve(process.cwd(), './commands/');
+    var files = fs.readdirSync(route);
+    for(var i in files) {
+        if(files[i].endsWith('.js')) {
+          //console.log(files[i]);
+          route = path.resolve(process.cwd(), './commands/', files[i]);
+          const command = require(route).command;
+          const exec = require(route).exec;
+          commands.push(command);
+          execution[command.name] = exec;
+        }
+    };
+  } catch(err) {
+    console.error(err);
+  }
 }
 
-async function replies(interaction) {
-  await execution[interaction.commandName](interaction);
+async function replies(interaction, serverQueue) {
+  await execution[interaction.commandName](interaction, serverQueue);
 }
 
 module.exports = {
+  init: init,
   commands: commands,
   replies: replies
 }
