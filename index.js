@@ -5,9 +5,9 @@ const handler = require('./models/handler');
 
 
 
-let settings = fs.readFileSync("settings.json");
-settings = JSON.parse(settings);
-const rest = new REST({ version: '9' }).setToken(settings.token);
+//let settings = fs.readFileSync("settings.json");
+//settings = JSON.parse(settings);
+const rest = new REST({ version: '9' }).setToken(process.env.token);
 handler.init();
 
 (async () => {
@@ -16,7 +16,7 @@ handler.init();
     console.log('Started refreshing application (/) commands.');
 
     await rest.put(
-      Routes.applicationGuildCommands(settings.client_id, settings.guild_id),
+      Routes.applicationGuildCommands(process.env.client_id, process.env.guild_id),
       { body: handler.commands },
     );
 
@@ -50,4 +50,4 @@ client.on('error', (err) => {
   console.log(err.message);
 })
 
-client.login(settings.token);
+client.login(process.env.token);
