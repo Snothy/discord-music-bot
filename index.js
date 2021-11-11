@@ -2,12 +2,10 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
 const handler = require('./models/handler');
+//require('dotenv').config();
 
 
-
-//let settings = fs.readFileSync("settings.json");
-//settings = JSON.parse(settings);
-const rest = new REST({ version: '9' }).setToken(process.env.token);
+const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
 handler.init();
 
 (async () => {
@@ -50,4 +48,4 @@ client.on('error', (err) => {
   console.log(err.message);
 })
 
-client.login(process.env.token);
+client.login(process.env.TOKEN);

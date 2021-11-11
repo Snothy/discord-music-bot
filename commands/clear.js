@@ -7,14 +7,18 @@ command = {
 }
 
 async function exec(interaction, server_queue) {
-  // clear queue
-  interaction.client.queue.delete(interaction.guildId);
-  // stop song
-  server_queue.player.stop();
+  let reply;
+  // if queue => clear queue & stop song
+  if(server_queue) {
+    interaction.client.queue.delete(interaction.guildId);
+    server_queue.player.stop();
+    reply = "```css\n[Clear queue]\n" + "```";
+  } else {
+    reply = "```css\n[Leave voice chat]\n" + "```";
+  }
   // leave
   voice.getVoiceConnection(interaction.guild.id).disconnect();
 
-  const reply = "```css\n[Clear queue]\n" + "```";
   await interaction.reply({
     content: reply,
     ephemeral: false

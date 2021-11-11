@@ -33,7 +33,7 @@ async function exec(interaction, server_queue) {
   }
 
   //let server_queue = interaction.client.queue.get(interaction.guildId);
-  let song, reply, currLength, songs
+  let song, reply, currLength, songs, playlistData
   const input = interaction.options.getString('song');
 
   //get song data from input string (whether its a song title or youtube url link)
@@ -44,7 +44,7 @@ async function exec(interaction, server_queue) {
         /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,
       ) &&
       /^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
-        const playlistData = await playlist(input);
+        playlistData = await playlist(input);
         songs = playlistData.songs;
         reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
       
@@ -74,7 +74,7 @@ async function exec(interaction, server_queue) {
       //handle playlist
       if(searchResult.all[0].type === 'list') {
         const playlistInfo = searchResult.all[0]; //.url .title .videoCount
-        const playlistData = await playlist(playlistInfo.url);
+        playlistData = await playlist(playlistInfo.url);
         songs = playlistData.songs;
         reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
 
@@ -130,12 +130,26 @@ async function exec(interaction, server_queue) {
       reply = 'Could not connect to voice channel';
       console.error(err);
     }
+
+  //if a server queue DOES exist
   } else {
-    //if a server queue DOES exist
-    server_queue.songs.push(song);
-    currLength = song.length;
-    currLength = secondsToTime(currLength);
-    reply = "```css\n[Add song]\n   " + `${server_queue.songs.length-1}` + " : " + `${song.title}` + ` [${currLength}]`+ "```";
+    //if normal song
+    if(!songs) {
+      server_queue.songs.push(song);
+      currLength = song.length;
+      currLength = secondsToTime(currLength);
+      reply = "```css\n[Add song]\n   " + `${server_queue.songs.length-1}` + " : " + `${song.title}` + ` [${currLength}]`+ "```";
+
+    //if playlist
+    } else {
+      songs.map(song => {
+        server_queue.songs.push(song);
+      });
+      reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+    }
+
+
+
   }
 
   await interaction.reply({
@@ -153,7 +167,7 @@ const music_player = async (guild, song, interaction) => {
     return;
   }
 
-  const stream = ytdl(song.url, {filter: 'audioonly'});
+  const stream = ytdl(song.url, {filter: 'audioonly', type: 'opus'});
   const player = voice.createAudioPlayer();
   song_queue.connection.subscribe(player);
   song_queue.player = player;
