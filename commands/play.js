@@ -1,20 +1,21 @@
 const voice = require ('@discordjs/voice')
 const discordjs = require('discord.js');
-const fs = require('fs');
-const yts = require( 'yt-search' )
-const ytdl = require('ytdl-core');
+//const fs = require('fs');
+//const yts = require( 'yt-search' )
+//const ytdl = require('ytdl-core');
 const secondsToTime = require('../models/utils');
-const playlist = require('../models/playlist');
+//const playlist = require('../models/playlist');
+const getSongs = require('../models/getSongs');
 const ytdl2 = require('ytdl-core-as');
 
 command = {
   name: 'play',
   aliases: ['p'],
-  description: 'Play a song',
+  description: 'Play or queue a song',
   options: 
   [{
     name: 'song',
-    description: 'The name of the song',
+    description: 'Song search term or link',
     required: true,
     type: discordjs.Constants.ApplicationCommandOptionTypes.STRING
   }]
@@ -33,88 +34,13 @@ async function exec(interaction, server_queue) {
     return;
   }
 
-  //let server_queue = interaction.client.queue.get(interaction.guildId);
-  let song, reply, currLength, songs, playlistData, songData;
+  let reply, songs;
   input = interaction.options.getString('song');
-  //get song data from input string (whether its a song title or youtube url link)   //if(ytdl.validateURL(input)) { old url validation
-  if(input.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi,)) {
+  const getSongsData = await getSongs(input);
+  reply = getSongsData.reply;
+  
 
-    //playlist handler from url
-    if(input.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,) && /^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
-        //console.log('link playlist');
-        playlistData = await playlist(input);
-        songs = playlistData.songs;
-        reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
-      
-    //if normal link (one song, not playlist)
-    } else if (
-      input.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,) && !/^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
-      //console.log('link video');
-      songData = await ytdl.getInfo(input)
-      .catch(error => {
-        //handle status 410 error (cant access information on video)
-        console.log('410');
-      });
-      if(!songData) {
-        await interaction.reply({
-          content: "```css\n[Add song failed]\n" + "```",
-          ephemeral: true
-        });
-        return;
-      }
-      //console.log(songData);
-      //this could lead to a playlist, rather than a single url
-      song = {
-        title: songData.videoDetails.title,
-        url: songData.videoDetails.video_url,
-        length: songData.videoDetails.lengthSeconds
-      }
-      //reply = 'Playing ' + song.title;
-      currLength = song.length;
-      currLength = secondsToTime(currLength);
-      reply = "```css\n[Add song]\n   0 : " + `${song.title}` + ` [${currLength}]`+ "```";
-
-    //if the link isnt youtube ot a youtube playlist
-    } else {
-      await interaction.reply({
-        content: "```css\n" + `[Invalid URL]` + "```",
-        ephemeral: true
-      });
-      return
-    }
-
-  //if input isnt a url
-  } else {
-    const searchResult = await yts(input);
-    if(searchResult.all.length > 1) {
-
-      //handle playlist
-      if(searchResult.all[0].type === 'list') {
-        //console.log('normal input playlist');
-        const playlistInfo = searchResult.all[0]; //.url .title .videoCount
-        playlistData = await playlist(playlistInfo.url);
-        songs = playlistData.songs;
-        reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
-
-      //handle normal video search
-      } else {
-        //console.log('normal video search');
-        song = {
-          title: searchResult.all[0].title,
-          url: searchResult.all[0].url,
-          length: searchResult.all[0].duration.seconds
-        }
-        currLength = song.length;
-        currLength = secondsToTime(currLength);
-        reply = "```css\n[Add song]\n   0 : " + `${song.title}` + ` [${currLength}]`+ "```";
-      }
-
-    } else {
-      reply = "```css\n[Add song failed]\n" + "```"
-    }
-  }
-
-  if(!server_queue) {
+  if(!server_queue && getSongsData.songs) {
     const queue_constructor = {
       voice_channel: vc,
       text_channel: interaction.channel,
@@ -124,17 +50,10 @@ async function exec(interaction, server_queue) {
     }
     interaction.client.queue.set(interaction.guildId, queue_constructor);
 
-
-    //if normal song
-    if(!songs) {
+    songs = getSongsData.songs;
+    songs.map(song => {
       queue_constructor.songs.push(song);
-
-    //if playlist
-    } else {
-      songs.map(song => {
-        queue_constructor.songs.push(song);
-      })
-    }
+    });
     
     try {
       const connection = voice.joinVoiceChannel({
@@ -151,30 +70,35 @@ async function exec(interaction, server_queue) {
     }
 
   //if a server queue DOES exist
-  } else {
+  } else if (getSongsData.songs) {
+    songs = getSongsData.songs;
     //if normal song
-    if(!songs) {
-      server_queue.songs.push(song);
-      currLength = song.length;
+    if(songs.length === 1) {
+      server_queue.songs.push(songs[0]);
+      currLength = songs[0].length;
       currLength = secondsToTime(currLength);
-      reply = "```css\n[Add song]\n   " + `${server_queue.songs.length-1}` + " : " + `${song.title}` + ` [${currLength}]`+ "```";
+      reply = "```css\n[Add song]\n   " + `${server_queue.songs.length-1}` + " : " + `${songs[0].title}` + ` [${currLength}]`+ "```";
 
     //if playlist
     } else {
       songs.map(song => {
         server_queue.songs.push(song);
       });
-      reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+      //const playlistData = getSongsData.playlistData;
+      //reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
     }
-
-
-
   }
 
-  await interaction.reply({
-    content: reply,
-    ephemeral: false
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: false
+    });
+  } catch(err) {
+    console.log('Failed posting message');
+    console.error(err);
+  }
+
 }
 
 const music_player = async (guild, song, interaction, tries = 0) => {

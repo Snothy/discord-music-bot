@@ -34,6 +34,7 @@ client.queue = new Map();
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.user.setStatus('turbomusic in astrolow');
 });
 
 client.on('interactionCreate', async interaction => {
