@@ -10,7 +10,7 @@ command = {
     name: 'queue_position',
     description: 'Skip song at certain position in queue',
     required: false,
-    type: discordjs.Constants.ApplicationCommandOptionTypes.NUMBER
+    type: discordjs.Constants.ApplicationCommandOptionTypes.INTEGER
   }]
 }
 
@@ -18,7 +18,7 @@ async function exec(interaction, server_queue) {
   //if not in voice chat or no server queue (no player to perform methods on)
   if(!voice.getVoiceConnection(interaction.guild.id) || !server_queue) {
     await interaction.reply({
-      content: `Could not skip.`,
+      content: "```" + `css\n[Not playing]` +"```",
       ephemeral: true
     });
     return
@@ -26,13 +26,12 @@ async function exec(interaction, server_queue) {
 
   let reply, currLength;
   //if optional parameter is provided to skip song at position
-  if(!!interaction.options.getNumber('queue_position')) {
-    const input = interaction.options.getNumber('queue_position');
-    console.log(input);
+  if(!!interaction.options.getInteger('queue_position')) {
+    const input = interaction.options.getInteger('queue_position');
     //check if that song exists in queue
-    if(server_queue.songs.length<input) {
+    if(server_queue.songs.length-1<input) {
       await interaction.reply({
-        content: `Queue only contains ${server_queue.songs.length} songs. Cannot skip position ${input}`,
+        content: "```" + `css\n[No song at position ${input}/${server_queue.songs.length-1}]` +"```",
         ephemeral: true
       });
       return;
@@ -50,12 +49,18 @@ async function exec(interaction, server_queue) {
     return
   }
 
+  //console.log(server_queue.player.state.status);
+  if(server_queue.player.state.status !== 'idle') {
+    server_queue.player.stop();
+  }
+
   const song = server_queue.songs[0];
   currLength = song.length;
   currLength = secondsToTime(currLength);
   reply = "```css\n[Skip song]\n    " + `0` + ": " + `${song.title}` + ` [${currLength}]`+ "```";
 
-  server_queue.player.stop();
+
+  
   await interaction.reply({
     content: reply,
     ephemeral: false

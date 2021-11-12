@@ -5,6 +5,7 @@ const yts = require( 'yt-search' )
 const ytdl = require('ytdl-core');
 const secondsToTime = require('../models/utils');
 const playlist = require('../models/playlist');
+const ytdl2 = require('ytdl-core-as');
 
 command = {
   name: 'play',
@@ -33,27 +34,35 @@ async function exec(interaction, server_queue) {
   }
 
   //let server_queue = interaction.client.queue.get(interaction.guildId);
-  let song, reply, currLength, songs, playlistData
-  const input = interaction.options.getString('song');
-
-  //get song data from input string (whether its a song title or youtube url link)
-  if(ytdl.validateURL(input)) {
+  let song, reply, currLength, songs, playlistData, songData;
+  input = interaction.options.getString('song');
+  //get song data from input string (whether its a song title or youtube url link)   //if(ytdl.validateURL(input)) { old url validation
+  if(input.match(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)?/gi,)) {
 
     //playlist handler from url
-    if(input.match(
-        /^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,
-      ) &&
-      /^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
+    if(input.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,) && /^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
+        //console.log('link playlist');
         playlistData = await playlist(input);
         songs = playlistData.songs;
         reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
       
     //if normal link (one song, not playlist)
-    } else {
-      const songData = await ytdl.getInfo(input);
+    } else if (
+      input.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,) && !/^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
+      //console.log('link video');
+      songData = await ytdl.getInfo(input)
+      .catch(error => {
+        //handle status 410 error (cant access information on video)
+        console.log('410');
+      });
+      if(!songData) {
+        await interaction.reply({
+          content: "```css\n[Add song failed]\n" + "```",
+          ephemeral: true
+        });
+        return;
+      }
       //console.log(songData);
-      console.log(Object.keys(songData));
-      console.log(songData.videos);
       //this could lead to a playlist, rather than a single url
       song = {
         title: songData.videoDetails.title,
@@ -64,6 +73,14 @@ async function exec(interaction, server_queue) {
       currLength = song.length;
       currLength = secondsToTime(currLength);
       reply = "```css\n[Add song]\n   0 : " + `${song.title}` + ` [${currLength}]`+ "```";
+
+    //if the link isnt youtube ot a youtube playlist
+    } else {
+      await interaction.reply({
+        content: "```css\n" + `[Invalid URL]` + "```",
+        ephemeral: true
+      });
+      return
     }
 
   //if input isnt a url
@@ -73,6 +90,7 @@ async function exec(interaction, server_queue) {
 
       //handle playlist
       if(searchResult.all[0].type === 'list') {
+        //console.log('normal input playlist');
         const playlistInfo = searchResult.all[0]; //.url .title .videoCount
         playlistData = await playlist(playlistInfo.url);
         songs = playlistData.songs;
@@ -80,6 +98,7 @@ async function exec(interaction, server_queue) {
 
       //handle normal video search
       } else {
+        //console.log('normal video search');
         song = {
           title: searchResult.all[0].title,
           url: searchResult.all[0].url,
@@ -127,7 +146,7 @@ async function exec(interaction, server_queue) {
       await music_player(interaction.guild, queue_constructor.songs[0], interaction);
     } catch(err) {
       interaction.client.queue.delete(interaction.guildId);
-      reply = 'Could not connect to voice channel';
+      reply = "```css\n[Couldn't connect]\n" + "```";
       console.error(err);
     }
 
@@ -158,7 +177,7 @@ async function exec(interaction, server_queue) {
   });
 }
 
-const music_player = async (guild, song, interaction) => {
+const music_player = async (guild, song, interaction, tries = 0) => {
   const song_queue = interaction.client.queue.get(guild.id);
 
   if(!song) {
@@ -166,46 +185,65 @@ const music_player = async (guild, song, interaction) => {
     interaction.client.queue.delete(guild.id);
     return;
   }
-
-  const stream = ytdl(song.url, {filter: 'audioonly', type: 'opus'});
-  const player = voice.createAudioPlayer();
-  song_queue.connection.subscribe(player);
-  song_queue.player = player;
-  const resource = voice.createAudioResource(stream);
-  await player.play(resource);
-
-  player.on('error', err => {
-    console.error(err);
-  })
-
-  /*
-  audioPlayer.on(voice.AudioPlayerStatus.Playing, async () => {
-    //perform some action while playing
-  });
-  */
-
-  player.on(voice.AudioPlayerStatus.Idle, async () => {
-    const timeout = async (ms) => {
-      setTimeout(ms);
-    }
-    await timeout(2000);
-    if(voice.AudioPlayerStatus.Buffering || voice.AudioPlayerStatus.Playing) {
-      return;
-    }
-
-    song_queue.songs.shift();
-    await music_player(guild, song_queue.songs[0], interaction);
-    
-    /*
-    //edit reply rather than send reply
-    await interaction.editReply({
-      content: `Playing ${song.title}`,
-      ephemeral: false
-    });
-    */
-    
-  })
   
+  let stream, player, resource
+  //load song data
+  try {
+    await ytdl2(song.url, {filter: "audioonly", highWaterMark: 1 << 28, quality: "highestaudio"})
+    .then(istream => {
+      stream=istream;
+    })
+    .catch(e => console.error(e));
+    player = voice.createAudioPlayer();
+    song_queue.connection.subscribe(player);
+    song_queue.player = player;
+    resource = voice.createAudioResource(stream);
+    await player.play(resource);
+
+    player.on(voice.AudioPlayerStatus.Playing, async () => {
+      tries = 0;
+    })
+
+    
+    player.on(voice.AudioPlayerStatus.Idle, async () => { //or on('finish') or voice.AudioPlayerStatus.Idle
+      song_queue.songs.shift();
+      await music_player(guild, song_queue.songs[0], interaction);
+    })
+    
+
+    player.on('error',  async (err) => {
+      //if song crashes mid playback (errconn)
+      //not sure how to get error codes
+      //not sure if this is still an issue when using ytdl2
+
+      //if theres an error while playing the song (err 403), try to play it again (2 attempts 'tries<3')
+      if(tries < 3 ) {
+        song_queue.songs.unshift(song);
+        setTimeout(() => {
+          music_player(interaction.guild, song, interaction, tries + 1);
+        }, 1000);
+      
+      //if it doesnt play, skip song
+      } else {
+        song_queue.songs.shift();
+        await music_player(guild, song_queue.songs[0], interaction);
+        await interaction.followUp({
+          content: "```css\n[Error playing]\n   " + `0` + " : " + `${song.title}` + ` [${secondsToTime(song.length)}]`+ "```",
+          ephemeral: true
+        });
+      }
+    })
+
+  //handle ytdl being unable to load video info because of some restrictions - error (410) => skip song 
+  } catch(err) {
+    song_queue.songs.shift();
+    await interaction.followUp({
+      content: "```css\n[Error playing]\n   " + `0` + " : " + `${song.title}` + ` [${secondsToTime(song.length)}]`+ "```",
+      ephemeral: true
+    });
+    await music_player(guild, song_queue.songs[0], interaction);
+  }
+
 }
 
 module.exports = {

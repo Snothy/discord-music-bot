@@ -4,6 +4,15 @@ command = {
 }
 
 async function exec(interaction, server_queue) {
+  //if no queue, cant shuffle
+  if(!server_queue.songs) {
+    await interaction.reply({
+      content: "```css\n" + `[There is no queue.]` + "```",
+      ephemeral: true
+    });
+    return
+  }
+
   //ignore first song on shuffle
   currSong = server_queue.songs[0];
   server_queue.songs.splice(0,1);

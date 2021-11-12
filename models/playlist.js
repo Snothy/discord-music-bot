@@ -12,7 +12,7 @@ module.exports = async function playlist(url) {
     fullLength = fullLength + song.durationSec;
     songs.push({
       title: song.title,
-      url: song.shortUrl,
+      url: song.url,
       length: song.durationSec
     });
   });

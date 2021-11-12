@@ -9,20 +9,20 @@ command = {
     name: 'page',
     description: 'Show queue page',
     required: false,
-    type: discordjs.Constants.ApplicationCommandOptionTypes.NUMBER
+    type: discordjs.Constants.ApplicationCommandOptionTypes.INTEGER
   }]
 }
 
 async function exec(interaction, server_queue) {
   if(!voice.getVoiceConnection(interaction.guild.id) || !server_queue) {
     await interaction.reply({
-      content: `There is no queue.`,
+      content: "```css\n" + `[Queue empty]` + "```",
       ephemeral: true
     });
     return
   };
 
-  const input = interaction.options.getNumber('page');
+  const input = interaction.options.getInteger('page');
   let response, i ,page, maxPages, maxSongs, maxLength, currLength;
   response = "";
   i = 0;
@@ -38,9 +38,10 @@ async function exec(interaction, server_queue) {
   if(!!input) {
     if(input>maxPages) {
       await interaction.reply({
-        content: `Invalid page number. Max pages = ${maxPages}`,
+        content: "```css\n" + `[Invalid page ${input}/${maxPages}]` + "```",
         ephemeral: true
       });
+      return;
     } else {
       page = input;
       i = page*10-10;

@@ -7,6 +7,14 @@ command = {
 }
 
 async function exec(interaction, server_queue) {
+  if(!voice.getVoiceConnection(interaction.guild.id) || !server_queue) {
+    await interaction.reply({
+      content: "```css\n" + `[There is no queue.]` + "```",
+      ephemeral: true
+    });
+    return
+  };
+
   let reply;
   // if queue => clear queue & stop song
   if(server_queue) {

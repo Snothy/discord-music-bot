@@ -2,14 +2,13 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
 const handler = require('./models/handler');
-//require('dotenv').config();
+require('dotenv').config();
 
 
 const rest = new REST({ version: '9' }).setToken(process.env.TOKEN);
 handler.init();
 
 (async () => {
-  //console.log(commands);
   try {
     console.log('Started refreshing application (/) commands.');
 
