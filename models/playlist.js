@@ -9,12 +9,14 @@ module.exports = async function playlist(url) {
   let fullLength = 0;
   
   playlist.items.map(song => {
-    fullLength = fullLength + song.durationSec;
-    songs.push({
-      title: song.title,
-      url: song.url,
-      length: song.durationSec
-    });
+    if(song) {
+      fullLength = fullLength + song.durationSec;
+      songs.push({
+        title: song.title,
+        url: song.url,
+        length: song.durationSec
+      });
+    }
   });
   return {songs:songs, playlistData: {
     title: playlist.title,
