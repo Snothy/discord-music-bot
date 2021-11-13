@@ -1,4 +1,4 @@
-const voice = require ('@discordjs/voice')
+const voice = require ('@discordjs/voice');
 const discordjs = require('discord.js');
 const secondsToTime = require('../models/utils');
 
@@ -59,7 +59,10 @@ async function exec(interaction, server_queue) {
   currLength = secondsToTime(currLength);
   reply = "```css\n[Skip song]\n    " + `0` + ": " + `${song.title}` + ` [${currLength}]`+ "```";
 
-
+  //if loop === true -> turn off on skip (you're trying to skip the song you had looped)
+  if(server_queue.loop) {
+    server_queue.loop = false;
+  }
   
   await interaction.reply({
     content: reply,

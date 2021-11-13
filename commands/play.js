@@ -46,7 +46,10 @@ async function exec(interaction, server_queue) {
       text_channel: interaction.channel,
       connection: null,
       player: null,
-      songs: []
+      songs: [],
+      loop: false,
+      loop_queue: false,
+      loop_queue_songs: []
     }
     interaction.client.queue.set(interaction.guildId, queue_constructor);
 
@@ -130,21 +133,30 @@ const music_player = async (guild, song, interaction, tries = 0) => {
 
     
     player.on(voice.AudioPlayerStatus.Idle, async () => { //or on('finish') or voice.AudioPlayerStatus.Idle
-      song_queue.songs.shift();
-      await music_player(guild, song_queue.songs[0], interaction);
+      //no error on downloading audio
+      if(stream._readableState.errored == null) {
+        //handle loops
+        if(song_queue.loop) {
+          song_queue.songs.unshift(song);
+        } else if(song_queue.loop_queue) {
+          song_queue.songs.push(song);
+        }
+        song_queue.songs.shift();
+        await music_player(guild, song_queue.songs[0], interaction);
+      }
     })
     
 
     player.on('error',  async (err) => {
       //if song crashes mid playback (errconn)
-      //not sure how to get error codes
       //not sure if this is still an issue when using ytdl2
+      //console.log(stream._readableState.errored.statusCode);
+      //console.log(stream._readableState.errored.statusCode === 403);
 
       //if theres an error while playing the song (err 403), try to play it again (2 attempts 'tries<3')
       if(tries < 3 ) {
-        song_queue.songs.unshift(song);
-        setTimeout(() => {
-          music_player(interaction.guild, song, interaction, tries + 1);
+        setTimeout(async () => {
+          await music_player(interaction.guild, song, interaction, tries + 1);
         }, 1000);
       
       //if it doesnt play, skip song
