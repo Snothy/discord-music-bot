@@ -13,7 +13,8 @@ handler.init();
     console.log('Started refreshing application (/) commands.');
 
     await rest.put(
-      Routes.applicationGuildCommands(process.env.client_id, process.env.guild_id),
+      //Routes.applicationGuildCommands(process.env.client_id, process.env.guild_id),
+      Routes.applicationCommands(process.env.client_id),
       { body: handler.commands },
     );
 
