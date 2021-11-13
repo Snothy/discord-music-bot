@@ -173,10 +173,15 @@ const music_player = async (guild, song, interaction, tries = 0) => {
   //handle ytdl being unable to load video info because of some restrictions - error (410) => skip song 
   } catch(err) {
     song_queue.songs.shift();
-    await interaction.followUp({
-      content: "```css\n[Error playing]\n   " + `0` + " : " + `${song.title}` + ` [${secondsToTime(song.length)}]`+ "```",
-      ephemeral: true
-    });
+    try {
+      await interaction.followUp({
+        content: "```css\n[Error playing]\n   " + `0` + " : " + `${song.title}` + ` [${secondsToTime(song.length)}]`+ "```",
+        ephemeral: true
+      });
+    } catch(err) {
+      //console.error('error playing song')
+    }
+
     await music_player(guild, song_queue.songs[0], interaction);
   }
 

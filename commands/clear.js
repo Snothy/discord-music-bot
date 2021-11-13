@@ -27,10 +27,15 @@ async function exec(interaction, server_queue) {
   // leave
   voice.getVoiceConnection(interaction.guild.id).disconnect();
 
-  await interaction.reply({
-    content: reply,
-    ephemeral: false
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: false
+    });
+  }catch(err) {
+    console.error('couldnt send message');
+  }
+
 }
 
 module.exports = {

@@ -20,10 +20,15 @@ async function exec(interaction, server_queue) {
   server_queue.songs.splice(0, 0, currSong);
 
   const reply = "```css\n[Shuffle queue]\n" + "```";
-  await interaction.reply({
-    content: reply,
-    ephemeral: false
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: false
+    });
+  } catch(err) {
+    console.error('couldnt send message');
+  }
+
 }
 
 function shuffleArray(array) {

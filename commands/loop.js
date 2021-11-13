@@ -19,10 +19,15 @@ async function exec(interaction, server_queue) {
   server_queue.loop_queue = false;
 
   const reply = "```css\n"+ `[Loop ${server_queue.loop ? 'on' : 'off'}]` +"\n```";
-  await interaction.reply({
-    content: reply,
-    ephemeral: false
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: false
+    });
+  } catch(err) {
+    console.log('couldnt send message');
+  }
+
 }
 
 module.exports = {

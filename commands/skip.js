@@ -64,10 +64,15 @@ async function exec(interaction, server_queue) {
     server_queue.loop = false;
   }
   
-  await interaction.reply({
-    content: reply,
-    ephemeral: false
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: false
+    });
+  } catch(err) {
+    console.error('couldnt send message');
+  }
+
 }
 
 module.exports = {

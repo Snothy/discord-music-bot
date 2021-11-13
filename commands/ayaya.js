@@ -5,10 +5,15 @@ command = {
 
 async function exec(interaction) {
   const reply = "```css\n[AYAYA]\n" + "```";
-  await interaction.reply({
-    content: reply,
-    ephemeral: true
-  });
+  try {
+    await interaction.reply({
+      content: reply,
+      ephemeral: true
+    });
+  } catch(err) {
+    console.error('couldnt send message');
+  }
+
 }
 
 module.exports = {

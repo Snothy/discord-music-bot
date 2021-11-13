@@ -72,11 +72,16 @@ async function exec(interaction, server_queue) {
 
   response = "```css\n" + pageResponse + response +"```";
 
-  await interaction.reply({
-    content: response,
-    ephemeral: false
-    //embeds: [embed]
-  });
+  try {
+    await interaction.reply({
+      content: response,
+      ephemeral: false
+      //embeds: [embed]
+    });
+  } catch(err) {
+    console.error('couldnt send message');
+  }
+
 }
 
 module.exports = {
