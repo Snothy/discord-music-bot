@@ -28,20 +28,47 @@ async function exec(interaction, server_queue) {
   //if optional parameter is provided to skip song at position
   if(!!interaction.options.getInteger('queue_position')) {
     const input = interaction.options.getInteger('queue_position');
+
+    //allow usage for /skip -1 to skip last song, but only -1
+    if(input < -1) {
+      try {
+        await interaction.reply({
+          content: "```" + `css\n[Invalid input. Only negative allowed is -1]` +"```",
+          ephemeral: true
+        });
+        return;
+      }
+      catch (err) {
+        console.error(err);
+      }
+    }
     //check if that song exists in queue
     if(server_queue.songs.length-1<input) {
-      await interaction.reply({
-        content: "```" + `css\n[No song at position ${input}/${server_queue.songs.length-1}]` +"```",
-        ephemeral: true
-      });
-      return;
+      try {
+        await interaction.reply({
+          content: "```" + `css\n[No song at position ${input}/${server_queue.songs.length-1}]` +"```",
+          ephemeral: true
+        });
+        return;
+      }
+      catch (err) {
+        console.error(err);
+      }
     }
-    const song = server_queue.songs[input];
+
+    let song, index;
+    if(input === -1) {
+      song = server_queue.songs[server_queue.songs.length - 1];
+      index = server_queue.songs.length - 1;
+    } else {
+      song = server_queue.songs[input];
+      index = input;
+    }
     server_queue = server_queue.songs.splice(input, 1);
     
     currLength = song.length;
     currLength = secondsToTime(currLength);
-    reply = "```css\n[Skip song]\n    " + `${input}` + ": " + `${song.title}` + ` [${currLength}]`+ "```";
+    reply = "```css\n[Skip song]\n    " + `${index}` + ": " + `${song.title}` + ` [${currLength}]`+ "```";
     await interaction.reply({
       content: reply,
       ephemeral: false

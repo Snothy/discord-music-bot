@@ -24,6 +24,20 @@ async function exec(interaction, server_queue) {
   };
 
   const input = interaction.options.getInteger('page');
+  //allow usage for /skip -1 to skip last song, but only -1
+  if(input < -1) {
+    try {
+      await interaction.reply({
+        content: "```" + `css\n[Invalid input. Only negative allowed is -1]` +"```",
+        ephemeral: true
+      });
+      return;
+    }
+    catch (err) {
+      console.error(err);
+    }
+  }
+
   let response, i ,page, maxPages, maxSongs, maxLength, currLength, length;
   response = "";
   i = 0;
@@ -44,7 +58,11 @@ async function exec(interaction, server_queue) {
       });
       return;
     } else {
-      page = input;
+      if(input === -1) {
+        page = maxPages;
+      } else {
+        page = input;
+      }
       i = page*10-10;
     }
   }
