@@ -13,8 +13,12 @@ module.exports = async function getSongs(input) {
       if(input.match(/^(https?:\/\/)?(www\.)?(m\.)?(youtube\.com|youtu\.?be)\/.+$/gi,) && /^.*(youtu.be\/|list=)([^#&?]*).*/gi.test(input)) {
           //console.log('link playlist');
           playlistData = await playlist(input);
-          songs = playlistData.songs;
-          reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+          if(playlistData) {
+            songs = playlistData.songs;
+            reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+          } else {
+            reply = "```css\n[Load playlist failed]\n" + "```";
+          }
         
       //if normal link (one song, not playlist)
       } else if (
@@ -54,8 +58,12 @@ module.exports = async function getSongs(input) {
           //console.log('normal input playlist');
           const playlistInfo = searchResult.all[0]; //.url .title .videoCount
           playlistData = await playlist(playlistInfo.url);
-          songs = playlistData.songs;
-          reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+          if(playlistData) {
+            songs = playlistData.songs;
+            reply = "```css\n[Add playlist]\n   Playlist : " + `${playlistData.playlistData.title}` + ` [${secondsToTime(playlistData.playlistData.length)}]`+ "```";
+          } else {
+            reply = "```css\n[Load playlist failed]\n" + "```";
+          }
   
         //handle normal video search
         } else {

@@ -1,7 +1,14 @@
 const ytpl = require('ytpl');
 
 module.exports = async function playlist(url) {
-  const playlist = await ytpl(url.split('list=')[1].split('&index=')[0], {limit:300}).catch();
+  url = url.split('list=')[1].split('&index=')[0].split('&start_radio=')[0].split('&t=')[0].split('&rv=')[0];
+  let playlist;
+  try {
+    playlist = await ytpl(url, {limit:300});
+  } catch(err) {
+    return;
+  }
+  
   if(!playlist) {
     console.log('couldnt get playlist info');
   }

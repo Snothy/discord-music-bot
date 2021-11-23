@@ -132,8 +132,8 @@ const music_player = async (guild, song, interaction, tries = 0) => {
       try {
         //if switching channels (or dragged into a different channel), give 5 seconds to reconnect
         await Promise.race([
-          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Signalling, 5_000),
-          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Connecting, 5_000)
+          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Signalling, 1_000),
+          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Connecting, 1_000)
         ]);
       } catch(err) {
         interaction.client.queue.delete(interaction.guildId);
