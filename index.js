@@ -2,6 +2,7 @@ const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 const fs = require('fs');
 const handler = require('./models/handler');
+const voice = require ('@discordjs/voice');
 //require('dotenv').config();
 
 
@@ -43,6 +44,22 @@ client.on('interactionCreate', async interaction => {
 
   let server_queue = client.queue.get(interaction.guildId);
   await handler.replies(interaction, server_queue);
+});
+
+//if left alone in vc => disconnect after x amount of time
+client.on('voiceStateUpdate', (oldState, newState) => {
+  if (oldState.channelID !== oldState.guild.me.voice.channelID || newState.channel) {
+    return;
+  }
+
+  if (!oldState.channel.members.size - 1) {
+    setTimeout(() => {
+      //check again if somebody has joined the vc
+      if (oldState.channel.members.size === 1) {
+        voice.getVoiceConnection(oldState.guild.id).disconnect();
+      }
+    }, 4 * 60 * 1000); //4 minutes in ms
+  }
 });
 
 client.on('error', (err) => {

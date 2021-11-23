@@ -127,10 +127,22 @@ const music_player = async (guild, song, interaction, tries = 0) => {
     resource = voice.createAudioResource(stream);
     await player.play(resource);
 
+    //if bot is disconnected from vc => clear queue
+    song_queue.connection.on(voice.VoiceConnectionStatus.Disconnected, async (oldState, newState) => {
+      try {
+        //if switching channels (or dragged into a different channel), give 5 seconds to reconnect
+        await Promise.race([
+          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Signalling, 5_000),
+          voice.entersState(song_queue.connection, voice.VoiceConnectionStatus.Connecting, 5_000)
+        ]);
+      } catch(err) {
+        interaction.client.queue.delete(interaction.guildId);
+      }
+    });
+
     player.on(voice.AudioPlayerStatus.Playing, async () => {
       tries = 0;
-    })
-
+    });
     
     player.on(voice.AudioPlayerStatus.Idle, async () => { //or on('finish') or voice.AudioPlayerStatus.Idle
       //no error on downloading audio
@@ -144,8 +156,7 @@ const music_player = async (guild, song, interaction, tries = 0) => {
         song_queue.songs.shift();
         await music_player(guild, song_queue.songs[0], interaction);
       }
-    })
-    
+    });
 
     player.on('error',  async (err) => {
       //if song crashes mid playback (errconn)

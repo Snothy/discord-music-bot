@@ -1,4 +1,4 @@
-const voice = require ('@discordjs/voice')
+const voice = require ('@discordjs/voice');
 
 command = {
   name: 'clear',
@@ -16,9 +16,8 @@ async function exec(interaction, server_queue) {
   };
 
   let reply;
-  // if queue => clear queue & stop song
+  // if queue => stop song & server queue is cleared in the disconnect method in the music player
   if(server_queue) {
-    interaction.client.queue.delete(interaction.guildId);
     server_queue.player.stop();
     reply = "```css\n[Clear queue]\n" + "```";
   } else {
