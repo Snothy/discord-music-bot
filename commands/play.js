@@ -122,6 +122,7 @@ const music_player = async (guild, song, interaction, tries = 0) => {
     })
     .catch(e => console.error(e));
     player = voice.createAudioPlayer();
+    //player.setMaxListeners(20);
     song_queue.connection.subscribe(player);
     song_queue.player = player;
     resource = voice.createAudioResource(stream);
@@ -154,6 +155,9 @@ const music_player = async (guild, song, interaction, tries = 0) => {
           song_queue.songs.push(song);
         }
         song_queue.songs.shift();
+        player.stop();
+        song_queue.connection.removeAllListeners();
+        player.removeAllListeners();
         await music_player(guild, song_queue.songs[0], interaction);
       }
     });
@@ -167,12 +171,18 @@ const music_player = async (guild, song, interaction, tries = 0) => {
       //if theres an error while playing the song (err 403), try to play it again (2 attempts 'tries<3')
       if(tries < 3 ) {
         setTimeout(async () => {
+          player.removeAllListeners();
+          player.stop();
+          song_queue.connection.removeAllListeners();
           await music_player(interaction.guild, song, interaction, tries + 1);
         }, 1000);
       
       //if it doesnt play, skip song
       } else {
         song_queue.songs.shift();
+        player.removeAllListeners();
+        player.stop();
+        song_queue.connection.removeAllListeners();
         await music_player(guild, song_queue.songs[0], interaction);
         await interaction.followUp({
           content: "```css\n[Error playing]\n   " + `0` + " : " + `${song.title}` + ` [${secondsToTime(song.length)}]`+ "```",
@@ -192,7 +202,9 @@ const music_player = async (guild, song, interaction, tries = 0) => {
     } catch(err) {
       //console.error('error playing song')
     }
-
+    player.removeAllListeners();
+    player.stop();
+    song_queue.connection.removeAllListeners();
     await music_player(guild, song_queue.songs[0], interaction);
   }
 

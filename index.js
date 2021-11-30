@@ -32,11 +32,12 @@ const client = new Client({ intents: [
     Intents.FLAGS.GUILDS,
     Intents.FLAGS.GUILD_VOICE_STATES,
 ] });
+//client.setMaxListeners(20);
 client.queue = new Map();
 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
-  client.user.setStatus('turbomusic in astrolow');
+  client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
 });
 
 client.on('interactionCreate', async interaction => {
@@ -53,12 +54,16 @@ client.on('voiceStateUpdate', (oldState, newState) => {
   }
 
   if (!oldState.channel.members.size - 1) {
+    const guildId = oldState.guild.id;
     setTimeout(() => {
       //check again if somebody has joined the vc
       if (oldState.channel.members.size === 1) {
-        voice.getVoiceConnection(oldState.guild.id).disconnect();
+        if(voice.getVoiceConnection(guildId)) {
+          voice.getVoiceConnection(guildId).disconnect();
+          //delete guild queue or does does the disconnect listener catch the dc?
+        }
       }
-    }, 4 * 60 * 1000); //4 minutes in ms
+    }, 1 * 01 * 3000); //4 minutes in ms
   }
 });
 
