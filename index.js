@@ -70,7 +70,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
           //delete guild queue or does does the disconnect listener catch the dc?
         }
       }
-    }, 1 * 01 * 3000); //4 minutes in ms
+    }, 4 * 60 * 1000); //4 minutes in ms
   }
 });
 
