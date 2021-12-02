@@ -26,7 +26,6 @@ handler.init();
 })();
 
 
-
 const { Client, Intents } = require('discord.js');
 const client = new Client({ intents: [
     Intents.FLAGS.GUILDS,
@@ -35,8 +34,16 @@ const client = new Client({ intents: [
 //client.setMaxListeners(20);
 client.queue = new Map();
 
+//status 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
+});
+//status update
+client.on('guildCreate', () => {
+  client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
+});
+client.on('guildDelete', () => {
   client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
 });
 
