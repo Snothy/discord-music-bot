@@ -26,7 +26,6 @@ handler.init();
 })();
 
 
-
 const { Client, Intents } = require('discord.js');
 const client = new Client({ intents: [
     Intents.FLAGS.GUILDS,
@@ -35,8 +34,16 @@ const client = new Client({ intents: [
 //client.setMaxListeners(20);
 client.queue = new Map();
 
+//status 
 client.on('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
+  client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
+});
+//status update
+client.on('guildCreate', () => {
+  client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
+});
+client.on('guildDelete', () => {
   client.user.setActivity(`in ${client.guilds.cache.size} servers`, {type: "PLAYING"});
 });
 
@@ -63,7 +70,7 @@ client.on('voiceStateUpdate', (oldState, newState) => {
           //delete guild queue or does does the disconnect listener catch the dc?
         }
       }
-    }, 1 * 01 * 3000); //4 minutes in ms
+    }, 4 * 60 * 1000); //4 minutes in ms
   }
 });
 
