@@ -21,6 +21,7 @@ async function exec(interaction, server_queue) {
       content: "```css\n[Not playing]   [Use /play instead]\n" + "```",
       ephemeral: false
     });
+    return
   }
 
 
